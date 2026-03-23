@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDP Project Handoff Form</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --deep-brown: #5E5443;
+    --sage: #9BA888;
+    --limestone: #E8E3D9;
+    --charcoal: #2F2F2D;
+    --bronze: #7A6A55;
+    --copper: #8C5A3C;
+    --white: #ffffff;
+    --border: #C8C1B4;
+    --error: #AA4D2B;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--limestone);
+    color: var(--charcoal);
+    min-height: 100vh;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--charcoal);
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+  }
+  .topbar img { height: 36px; }
+  .topbar-title {
+    font-family: 'Georgia', serif;
+    color: var(--limestone);
+    font-size: 13px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  /* ── Job lookup bar ── */
+  .lookup-bar {
+    background: var(--deep-brown);
+    padding: 22px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .lookup-bar label {
+    color: var(--limestone);
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .lookup-bar input {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 10px 16px;
+    font-family: 'Arial', sans-serif;
+    font-size: 15px;
+    width: 160px;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .lookup-bar input::placeholder { color: rgba(255,255,255,0.4); }
+  .lookup-bar input:focus { border-color: var(--sage); }
+  .btn-lookup {
+    background: var(--sage);
+    color: var(--charcoal);
+    border: none;
+    padding: 10px 24px;
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  .btn-lookup:hover { background: #b3c2a0; }
+  .btn-lookup:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .lookup-status {
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    color: var(--limestone);
+    opacity: 0.8;
+    flex: 1;
+  }
+  .lookup-status.success { color: #a8d5a2; opacity: 1; }
+  .lookup-status.error { color: #e8a090; opacity: 1; }
+
+  /* ── Pre-fill banner ── */
+  .prefill-banner {
+    background: rgba(155,168,136,0.18);
+    border-left: 4px solid var(--sage);
+    padding: 14px 40px;
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    color: var(--bronze);
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+  }
+  .prefill-banner.visible { display: flex; }
+  .prefill-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .prefill-tag .dot {
+    width: 7px; height: 7px;
+    background: var(--sage);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Main layout ── */
+  .form-shell {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── Section cards ── */
+  .section-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    background: var(--deep-brown);
+    padding: 16px 28px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .section-num {
+    font-family: 'Georgia', serif;
+    font-size: 22px;
+    color: var(--sage);
+    font-style: italic;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'Georgia', serif;
+    font-size: 15px;
+    color: var(--limestone);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+
+  .section-body {
+    padding: 28px;
+  }
+
+  .section-note {
+    background: var(--limestone);
+    border-left: 3px solid var(--bronze);
+    padding: 12px 16px;
+    font-family: 'Arial', sans-serif;
+    font-size: 12.5px;
+    color: var(--bronze);
+    font-style: italic;
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+
+  /* ── Field grid ── */
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 28px;
+    margin-bottom: 20px;
+  }
+  .field-grid.one-col { grid-template-columns: 1fr; }
+  .field-grid.three-col { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-group.full-width { grid-column: 1 / -1; }
+
+  label.field-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--bronze);
+  }
+
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  select,
+  textarea {
+    border: 1px solid var(--border);
+    background: var(--white);
+    padding: 9px 12px;
+    font-family: 'Arial', sans-serif;
+    font-size: 13.5px;
+    color: var(--charcoal);
+    outline: none;
+    transition: border-color 0.15s;
+    border-radius: 2px;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--deep-brown);
+    background: #faf9f7;
+  }
+  input.prefilled {
+    background: rgba(155,168,136,0.1);
+    border-color: var(--sage);
+    color: var(--deep-brown);
+  }
+  textarea { resize: vertical; min-height: 72px; }
+
+  /* ── Sub-section ── */
+  .sub-section {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--limestone);
+  }
+  .sub-section-title {
+    font-family: 'Georgia', serif;
+    font-size: 13.5px;
+    color: var(--deep-brown);
+    font-weight: bold;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Checkboxes ── */
+  .check-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin-bottom: 14px;
+  }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    color: var(--charcoal);
+  }
+  .check-item input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--deep-brown);
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    position: sticky;
+    top: 64px;
+    z-index: 90;
+    background: var(--charcoal);
+    height: 4px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--sage);
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* ── Submit zone ── */
+  .submit-zone {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 32px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .submit-info {
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    color: var(--bronze);
+    line-height: 1.6;
+    max-width: 520px;
+  }
+  .submit-info strong { color: var(--deep-brown); }
+
+  .btn-submit {
+    background: var(--deep-brown);
+    color: var(--limestone);
+    border: none;
+    padding: 14px 36px;
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-submit:hover { background: var(--bronze); }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  /* ── Modal overlay ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(47,47,45,0.72);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-box {
+    background: var(--white);
+    border-top: 4px solid var(--deep-brown);
+    padding: 40px 48px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+  }
+  .modal-icon {
+    font-size: 42px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .modal-title {
+    font-family: 'Georgia', serif;
+    font-size: 20px;
+    color: var(--deep-brown);
+    margin-bottom: 10px;
+  }
+  .modal-body {
+    font-family: 'Arial', sans-serif;
+    font-size: 13.5px;
+    color: var(--bronze);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .modal-btn {
+    background: var(--deep-brown);
+    color: var(--limestone);
+    border: none;
+    padding: 12px 32px;
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: var(--limestone);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Divider ── */
+  .sage-rule {
+    height: 2px;
+    background: var(--sage);
+    margin: 20px 0;
+    opacity: 0.4;
+  }
+
+  /* ── Cost Items Table ── */
+  .cost-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+  }
+  .cost-items-table thead th {
+    background: var(--deep-brown);
+    color: var(--limestone);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .cost-items-table thead th:first-child { border-radius: 2px 0 0 0; }
+  .cost-items-table thead th:last-child { border-radius: 0 2px 0 0; text-align: right; }
+  .cost-items-table thead th:nth-child(3),
+  .cost-items-table thead th:nth-child(4) { text-align: center; }
+  .cost-items-table tbody tr { border-bottom: 1px solid var(--limestone); }
+  .cost-items-table tbody tr:hover { background: rgba(155,168,136,0.08); }
+  .cost-items-table tbody td { padding: 10px 12px; vertical-align: top; }
+  .cost-items-table tbody td:nth-child(3),
+  .cost-items-table tbody td:nth-child(4) { text-align: center; }
+  .cost-items-table tbody td:last-child { text-align: right; font-weight: bold; }
+  .cost-item-name { font-weight: bold; color: var(--deep-brown); }
+  .cost-item-desc { font-size: 12px; color: var(--bronze); margin-top: 2px; }
+  .cost-items-empty { text-align: center; padding: 24px; color: var(--bronze); font-style: italic; }
+
+  @media (max-width: 640px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .field-grid.three-col { grid-template-columns: 1fr; }
+    .topbar { padding: 12px 20px; }
+    .lookup-bar { padding: 16px 20px; }
+    .form-shell { padding: 24px 12px 60px; }
+    .section-body { padding: 20px 16px; }
+    .submit-zone { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<header class="topbar">
+  <img src="data:image/jpeg;base64,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" alt="Peachtree Decks &amp; Porches">
+  <span class="topbar-title">Project Handoff Form</span>
+</header>
+
+<!-- Progress bar -->
+<div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+<!-- Job lookup -->
+<div class="lookup-bar">
+  <label for="jobNumberInput">JobTread Job #</label>
+  <input type="text" id="jobNumberInput" placeholder="e.g. 2320" maxlength="10">
+  <button class="btn-lookup" id="btnLookup" onclick="lookupJob()">Load Job</button>
+  <span class="lookup-status" id="lookupStatus"></span>
+</div>
+
+<!-- Pre-fill banner -->
+<div class="prefill-banner" id="prefillBanner"></div>
+
+<!-- Form -->
+<div class="form-shell">
+<form id="handoffForm" novalidate>
+
+  <!-- ── 01 PROJECT IDENTITY ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Project Identity</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">Green-highlighted fields are pulled from the approved JobTread contract. All other fields require manual entry by the salesperson.</div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Job Number</label>
+          <input type="text" id="f_jobNumber" readonly class="prefilled" placeholder="Load job above">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Job Name</label>
+          <input type="text" id="f_jobName" readonly class="prefilled" placeholder="Auto-filled">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Client Name</label>
+          <input type="text" id="f_clientName" readonly class="prefilled" placeholder="Auto-filled">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Client Phone</label>
+          <input type="text" id="f_clientPhone" readonly class="prefilled" placeholder="Auto-filled">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Client Email</label>
+          <input type="text" id="f_clientEmail" readonly class="prefilled" placeholder="Auto-filled">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Client Mailing Address</label>
+          <input type="text" id="f_clientAddress" readonly class="prefilled" placeholder="Auto-filled">
+        </div>
+        <div class="field-group full-width">
+          <label class="field-label">Job Site Address</label>
+          <input type="text" id="f_jobAddress" readonly class="prefilled" placeholder="Auto-filled">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Assigned PM</label>
+          <input type="text" id="f_pm" placeholder="Enter PM name">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Estimated Start Date</label>
+          <input type="date" id="f_startDate">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Client-Facing Completion Date</label>
+          <input type="date" id="f_completionDate">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01b CONTRACT LINE ITEMS ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">01b</span>
+      <span class="section-title">Contract Line Items</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">Cost items pulled from the approved Contract document in JobTread. Review for accuracy.</div>
+      <div class="field-grid one-col" style="margin-bottom:12px">
+        <div class="field-group">
+          <label class="field-label">Contract Description</label>
+          <textarea id="f_contractDesc" class="prefilled" readonly rows="3" placeholder="Auto-filled from contract"></textarea>
+        </div>
+      </div>
+      <table class="cost-items-table">
+        <thead>
+          <tr>
+            <th style="width:5%">#</th>
+            <th style="width:55%">Item</th>
+            <th style="width:12%">Qty</th>
+            <th style="width:13%">Unit Price</th>
+            <th style="width:15%">Total</th>
+          </tr>
+        </thead>
+        <tbody id="costItemsBody">
+          <tr><td colspan="5" class="cost-items-empty">No line items loaded — enter a job number above</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 02 CLIENT PROFILE & PROMISES ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Client Profile &amp; Promises Made</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">Everything said to the client that is NOT in the contract. The PM must know this before their first client interaction.</div>
+
+      <div class="sub-section-title">Communication Preferences</div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Preferred Contact Method</label>
+          <select id="f_contactMethod">
+            <option value="">Select...</option>
+            <option>Call</option>
+            <option>Text</option>
+            <option>Email</option>
+            <option>Call or Text</option>
+            <option>Text or Email</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Best Time to Reach Client</label>
+          <input type="text" id="f_bestTime" placeholder="e.g. Weekdays after 5pm">
+        </div>
+        <div class="field-group full-width">
+          <label class="field-label">Primary Decision-Maker (if not contract signer)</label>
+          <input type="text" id="f_decisionMaker" placeholder="Name and relationship to contract signer">
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Specific Promises or Commitments Made</div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <label class="field-label">Promise / Commitment 1</label>
+          <textarea id="f_promise1" placeholder="Describe exactly what was said and committed to..."></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Promise / Commitment 2</label>
+          <textarea id="f_promise2" placeholder=""></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Promise / Commitment 3</label>
+          <textarea id="f_promise3" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Known Client Sensitivities</div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <label class="field-label">Concerns raised during sales (noise, access hours, landscaping, pets, HOA, etc.)</label>
+          <textarea id="f_sensitivities" style="min-height:90px"></textarea>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Design Decisions Still Open</div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Open Item 1</label>
+          <input type="text" id="f_open1" placeholder="Selection not yet finalized...">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Open Item 2</label>
+          <input type="text" id="f_open2" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Open Item 3</label>
+          <input type="text" id="f_open3" placeholder="">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 03 SCOPE SUMMARY ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Scope Summary</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">Write what the crew and PM need to understand on day one — not the contract legal text.</div>
+
+      <div class="sub-section-title">Primary Structure Type(s)</div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="scope_deck"> Composite Deck</label>
+        <label class="check-item"><input type="checkbox" name="scope_porch"> Screened Porch</label>
+        <label class="check-item"><input type="checkbox" name="scope_pergola"> Pergola / Shade Structure</label>
+        <label class="check-item"><input type="checkbox" name="scope_teardown"> Teardown of existing structure required</label>
+      </div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <label class="field-label">Other Structure / Notes</label>
+          <input type="text" id="f_scopeOther" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Plain-Language Scope Summary</label>
+          <textarea id="f_scopeSummary" style="min-height:120px" placeholder="Describe the full project in plain language as if explaining to the crew lead on day one..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 04 MATERIAL SELECTIONS ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Material Selections</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">Exact product selections required. Vague entries ("Trex, brown") are not acceptable. Include manufacturer, product line, color name, and SKU where known.</div>
+
+      <div class="sub-section-title">Decking</div>
+      <div class="field-grid three-col">
+        <div class="field-group">
+          <label class="field-label">Manufacturer</label>
+          <input type="text" id="f_deckMfg" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Product Line</label>
+          <input type="text" id="f_deckLine" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Color Name</label>
+          <input type="text" id="f_deckColor" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">SKU / Item #</label>
+          <input type="text" id="f_deckSKU" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Board Width</label>
+          <input type="text" id="f_deckWidth" placeholder='e.g. 5.5"'>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Edge Type</label>
+          <select id="f_deckEdge">
+            <option value="">Select...</option>
+            <option>Grooved</option>
+            <option>Solid</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Railing</div>
+      <div class="field-grid three-col">
+        <div class="field-group">
+          <label class="field-label">Manufacturer</label>
+          <input type="text" id="f_railMfg" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Product Line</label>
+          <input type="text" id="f_railLine" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Post Color</label>
+          <input type="text" id="f_railPostColor" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Rail Color</label>
+          <input type="text" id="f_railColor" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Baluster Style</label>
+          <input type="text" id="f_baluster" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Post Cap Style</label>
+          <input type="text" id="f_postCap" placeholder="">
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Fasteners</div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Fastener System</label>
+          <input type="text" id="f_fastener" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Color / Finish</label>
+          <input type="text" id="f_fastenerColor" placeholder="">
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Non-Standard or Custom Selections</div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <label class="field-label">Deviation 1 — describe what it is and why it was selected</label>
+          <textarea id="f_matDev1" placeholder="e.g. Client selected Thermory ash decking instead of composite — premium upgrade requested by homeowner"></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Deviation 2</label>
+          <textarea id="f_matDev2" placeholder=""></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 05 SITE CONDITIONS ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">Site Conditions</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">Used to brief both the PM and drafter. Be specific — vague entries create field errors.</div>
+
+      <div class="sub-section-title">Grade &amp; Elevation</div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Finished Deck Height off Grade at House</label>
+          <input type="text" id="f_heightHouse" placeholder='e.g. 18"'>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Max Height at Any Corner</label>
+          <input type="text" id="f_heightMax" placeholder='e.g. 9 ft'>
+        </div>
+        <div class="field-group full-width">
+          <label class="field-label">Describe slope direction and severity</label>
+          <textarea id="f_slope" placeholder='e.g. "Drops 4 ft left to right across 20 ft span, relatively flat front to back"'></textarea>
+        </div>
+      </div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="grade_flat"> Grade is relatively flat</label>
+        <label class="check-item"><input type="checkbox" name="grade_slope"> Significant slope — drafter must account for variable post heights</label>
+        <label class="check-item"><input type="checkbox" name="grade_multilevel"> Grade change creates multi-level requirement</label>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">House Attachment</div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="attach_rim"> Ledger to rim joist</label>
+        <label class="check-item"><input type="checkbox" name="attach_masonry"> Ledger to masonry / brick</label>
+        <label class="check-item"><input type="checkbox" name="attach_free"> Freestanding — no ledger</label>
+        <label class="check-item"><input type="checkbox" name="attach_other"> Non-standard — describe below</label>
+      </div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <label class="field-label">Flashing Details / Attachment Notes</label>
+          <textarea id="f_flashing" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Access &amp; Site Constraints</div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <label class="field-label">Equipment access route</label>
+          <textarea id="f_access" placeholder='e.g. "Gate on left side, 6 ft wide, no overhead clearance issues, gravel driveway"'></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Underground utilities, septic, or irrigation in work zone</label>
+          <textarea id="f_utilities" placeholder=""></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Landscaping, hardscape, or structures to protect</label>
+          <textarea id="f_protect" placeholder=""></textarea>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Photos</div>
+      <div class="section-note" style="margin-bottom:14px">All site photos must be uploaded to the JobTread job file and labeled before submitting this form. Label format: "North elevation," "Grade from left corner," "Ledger location," etc.</div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" id="photosConfirmed" name="photosConfirmed"> I confirm all photos are uploaded and labeled in JobTread</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 06 STRUCTURAL & ENGINEERING ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">Structural &amp; Engineering Notes</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">These details drive the drafter's permit drawings. Complete every field for every job.</div>
+
+      <div class="sub-section-title">Framing Layout</div>
+      <div class="field-grid three-col">
+        <div class="field-group">
+          <label class="field-label">Joist Span (ft)</label>
+          <input type="text" id="f_joistSpan" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Joist Spacing (in OC)</label>
+          <input type="text" id="f_joistSpacing" placeholder='e.g. 16"'>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Beam Span Between Posts (ft)</label>
+          <input type="text" id="f_beamSpan" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Post Spacing (ft)</label>
+          <input type="text" id="f_postSpacing" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Footing Diameter (in)</label>
+          <input type="text" id="f_footingDia" placeholder='e.g. 12"'>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Footing Depth (in)</label>
+          <input type="text" id="f_footingDepth" placeholder='e.g. 16"'>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Load Conditions</div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="load_standard"> Standard residential (40 psf)</label>
+        <label class="check-item"><input type="checkbox" name="load_hottub"> Hot tub / spa on structure</label>
+        <label class="check-item"><input type="checkbox" name="load_kitchen"> Outdoor kitchen or heavy feature</label>
+        <label class="check-item"><input type="checkbox" name="load_engineer"> Engineering stamp required</label>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Deviations from PDP Standard Framing Spec</div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="framing_standard"> Standard spec — no deviations</label>
+      </div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <label class="field-label">Deviation 1</label>
+          <textarea id="f_frameDev1" placeholder="Describe deviation and reason..."></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Deviation 2</label>
+          <textarea id="f_frameDev2" placeholder=""></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 07 PERMIT & HOA ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">Permit &amp; HOA</span>
+    </div>
+    <div class="section-body">
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Permit Status</label>
+          <select id="f_permitStatus">
+            <option value="">Select...</option>
+            <option>Not yet applied</option>
+            <option>Application submitted</option>
+            <option>Approved</option>
+            <option>Not required</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Jurisdiction / County</label>
+          <input type="text" id="f_jurisdiction" placeholder="">
+        </div>
+        <div class="field-group">
+          <label class="field-label">HOA Approval Required</label>
+          <select id="f_hoaReq">
+            <option value="">Select...</option>
+            <option>Yes</option>
+            <option>No</option>
+            <option>Unknown</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">HOA Approval Status</label>
+          <select id="f_hoaStatus">
+            <option value="">Select...</option>
+            <option>Not started</option>
+            <option>Submitted — pending</option>
+            <option>Approved</option>
+            <option>N/A</option>
+          </select>
+        </div>
+        <div class="field-group full-width">
+          <label class="field-label">Known permit complications or jurisdiction-specific requirements</label>
+          <textarea id="f_permitNotes" placeholder=""></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 08 TRADE FLAGS ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <span class="section-title">Subcontractor &amp; Trade Flags</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">Flag any trade work discussed with the client or implied by the scope, even if not explicit in the contract.</div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="trade_elec"> Electrical (lighting, outlets, fans)</label>
+        <label class="check-item"><input type="checkbox" name="trade_concrete"> Concrete / flatwork</label>
+        <label class="check-item"><input type="checkbox" name="trade_plumbing"> Plumbing (outdoor kitchen, wet bar)</label>
+        <label class="check-item"><input type="checkbox" name="trade_screen"> Motorized screen system</label>
+        <label class="check-item"><input type="checkbox" name="trade_louver"> Louvered roof system</label>
+      </div>
+      <div class="field-grid one-col" style="margin-top:16px">
+        <div class="field-group">
+          <label class="field-label">Other trade / coordination notes</label>
+          <textarea id="f_tradeNotes" placeholder=""></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 09 CERTIFICATION ── -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <span class="section-title">Handoff Certification</span>
+    </div>
+    <div class="section-body">
+      <div class="section-note">By submitting this form, you confirm this information is complete and accurate, all photos are uploaded and labeled in JobTread, and the PM has been notified this package is ready.</div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Salesperson Name (confirm)</label>
+          <input type="text" id="f_sigName" placeholder="Type your full name">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Date of Submission</label>
+          <input type="date" id="f_sigDate">
+        </div>
+        <div class="field-group full-width">
+          <label class="field-label">PM Notes / Open Questions for Handoff Meeting</label>
+          <textarea id="f_pmNotes" placeholder="Anything the PM needs to know that doesn't fit elsewhere..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit zone -->
+  <div class="submit-zone">
+    <div class="submit-info">
+      <strong>Ready to submit?</strong> This will generate a branded PDF and download it to your device. Make sure a job has been loaded above and all sections are complete before submitting.
+    </div>
+    <button type="button" class="btn-submit" id="btnSubmit" onclick="submitForm()">
+      Generate &amp; Download PDF
+    </button>
+  </div>
+
+</form>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <span class="modal-icon" id="modalIcon">✅</span>
+    <div class="modal-title" id="modalTitle">Form Submitted</div>
+    <div class="modal-body" id="modalBody">The handoff PDF has been generated.</div>
+    <button class="modal-btn" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION — API calls go through the Cloudflare Worker proxy at /api/pave
+// The grant key lives server-side in the worker, NOT in the browser.
+// ══════════════════════════════════════════════════════════════════════════════
+const PAVE_ENDPOINT = '/api/pave';
+
+let currentJobId = null;
+let currentJobNumber = null;
+
+// ── Progress tracking ──
+function updateProgress() {
+  const inputs = document.querySelectorAll('#handoffForm input:not([readonly]):not([type="checkbox"]), #handoffForm textarea, #handoffForm select');
+  let filled = 0;
+  inputs.forEach(el => { if (el.value && el.value.trim()) filled++; });
+  const pct = Math.min(100, Math.round((filled / inputs.length) * 100));
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+document.getElementById('handoffForm').addEventListener('input', updateProgress);
+
+// ── Today's date ──
+document.getElementById('f_sigDate').value = new Date().toISOString().split('T')[0];
+
+// ── Enter key on job number field ──
+document.getElementById('jobNumberInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') lookupJob();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// JOB LOOKUP — sends { jobNumber } to /api/pave, worker builds the full query
+// ══════════════════════════════════════════════════════════════════════════════
+async function lookupJob() {
+  const jobNum = document.getElementById('jobNumberInput').value.trim();
+  if (!jobNum) return;
+
+  const btn = document.getElementById('btnLookup');
+  const status = document.getElementById('lookupStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Loading...';
+  status.textContent = 'Querying JobTread...';
+  status.className = 'lookup-status';
+
+  try {
+    // Send just the job number — the Cloudflare Worker builds the full query
+    const response = await fetch(PAVE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ jobNumber: jobNum })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error('API returned status ' + response.status + '. ' + errText);
+    }
+
+    const data = await response.json();
+
+    // Parse response — Pave wraps responses in a "query" envelope
+    // Try both: data.query.organization (Pave envelope) and data.organization (direct)
+    const queryResult = data?.query || data;
+    const org = queryResult?.organization;
+    const jobs = org?.jobs?.nodes;
+
+    if (!jobs || jobs.length === 0) {
+      throw new Error('No job found with number "' + jobNum + '". Check the number and try again.');
+    }
+
+    const job = jobs[0];
+    const docs = job?.documents?.nodes;
+
+    if (!docs || docs.length === 0) {
+      throw new Error('Job ' + jobNum + ' found, but no approved Contract document exists.');
+    }
+
+    const contract = docs[0];
+    const costItems = contract?.costItems?.nodes || [];
+
+    // Store job context
+    currentJobId = job.id;
+    currentJobNumber = job.number;
+
+    // Populate fields
+    setField('f_jobNumber', job.number, true);
+    setField('f_jobName', job.name, true);
+    setField('f_clientName', contract.toName, true);
+    setField('f_clientPhone', contract.toPhoneNumber, true);
+    setField('f_clientEmail', contract.toEmailAddress, true);
+    setField('f_clientAddress', contract.toAddress, true);
+    setField('f_jobAddress', contract.jobLocationAddress, true);
+    setField('f_contractDesc', contract.description, true);
+
+    // Populate cost items table
+    const tbody = document.getElementById('costItemsBody');
+    if (costItems.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="cost-items-empty">No line items on this contract</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      costItems.forEach(function(item, index) {
+        const qty = parseFloat(item.quantity) || 0;
+        const price = parseFloat(item.unitPrice) || 0;
+        const total = qty * price;
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + (index + 1) + '</td>' +
+          '<td>' +
+            '<div class="cost-item-name">' + escHtml(item.name || '') + '</div>' +
+            (item.description ? '<div class="cost-item-desc">' + escHtml(item.description) + '</div>' : '') +
+          '</td>' +
+          '<td>' + qty + '</td>' +
+          '<td>' + formatCurrency(price) + '</td>' +
+          '<td>' + formatCurrency(total) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Show prefill banner
+    const banner = document.getElementById('prefillBanner');
+    const prefilled = [
+      job.number && 'Job #' + job.number,
+      contract.toName && 'Client: ' + contract.toName,
+      contract.jobLocationAddress && 'Job Site Address',
+      contract.toPhoneNumber && 'Phone',
+      contract.toEmailAddress && 'Email',
+      costItems.length > 0 && costItems.length + ' Line Items',
+    ].filter(Boolean);
+
+    banner.innerHTML = '<strong style="color:var(--deep-brown);margin-right:8px">Auto-filled from JobTread:</strong>' +
+      prefilled.map(f => '<span class="prefill-tag"><span class="dot"></span>' + f + '</span>').join('');
+    banner.classList.add('visible');
+
+    status.textContent = '✓ Job loaded: ' + (job.name || jobNum);
+    status.className = 'lookup-status success';
+
+    updateProgress();
+
+  } catch (err) {
+    console.error('Lookup error:', err);
+    status.textContent = err.message || 'Connection error. Check your network and try again.';
+    status.className = 'lookup-status error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Load Job';
+}
+
+// ── Field helpers ──
+function setField(id, value, prefilled) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = value || '';
+  if (prefilled && value) el.classList.add('prefilled');
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function escHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatCurrency(num) {
+  return '$' + Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PDF GENERATION
+// ══════════════════════════════════════════════════════════════════════════════
+function getChecked(name) {
+  return [...document.querySelectorAll('input[name="' + name + '"]')].filter(c => c.checked).map(c => c.parentElement.textContent.trim());
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+
+  const W = 612, margin = 48, contentW = W - margin * 2;
+  const DEEP_BROWN = [94, 84, 67];
+  const SAGE = [155, 168, 136];
+  const LIMESTONE = [232, 227, 217];
+  const CHARCOAL = [47, 47, 45];
+  const BRONZE = [122, 106, 85];
+
+  let y = 0;
+
+  function newPage() {
+    doc.addPage();
+    y = margin;
+    doc.setFillColor(...DEEP_BROWN);
+    doc.rect(0, 0, W, 36, 'F');
+    doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...LIMESTONE);
+    doc.text('PEACHTREE DECKS & PORCHES', margin, 22);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Project Handoff Form — CONFIDENTIAL', W - margin, 22, { align: 'right' });
+    y = 56;
+  }
+
+  function checkPage(needed) {
+    needed = needed || 60;
+    if (y + needed > 750) newPage();
+  }
+
+  function sectionHeader(num, title) {
+    checkPage(50);
+    doc.setFillColor(...DEEP_BROWN);
+    doc.rect(margin, y, contentW, 28, 'F');
+    doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...SAGE);
+    doc.text(num, margin + 10, y + 18);
+    doc.setTextColor(...LIMESTONE);
+    doc.text(title.toUpperCase(), margin + 36, y + 18);
+    y += 36;
+  }
+
+  function labelValue(label, value, indent) {
+    indent = indent || 0;
+    checkPage(30);
+    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...BRONZE);
+    doc.text(label.toUpperCase(), margin + indent, y);
+    y += 13;
+    doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...CHARCOAL);
+    if (!value || value === '') {
+      doc.setTextColor(180, 170, 160);
+      doc.text('—', margin + indent, y);
+      doc.setTextColor(...CHARCOAL);
+    } else {
+      var lines = doc.splitTextToSize(value, contentW - indent);
+      lines.forEach(function(line) {
+        checkPage(14);
+        doc.text(line, margin + indent, y);
+        y += 14;
+      });
+      y -= 2;
+    }
+    y += 14;
+  }
+
+  function twoCol(pairs) {
+    var colW = (contentW - 16) / 2;
+    for (var i = 0; i < pairs.length; i += 2) {
+      var left = pairs[i], right = pairs[i + 1];
+      checkPage(42);
+      var startY = y;
+      doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...BRONZE);
+      doc.text((left.label || '').toUpperCase(), margin, y);
+      doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...CHARCOAL);
+      doc.text((left.value || '—').substring(0, 50), margin, y + 13);
+      if (right) {
+        doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...BRONZE);
+        doc.text((right.label || '').toUpperCase(), margin + colW + 16, y);
+        doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...CHARCOAL);
+        doc.text((right.value || '—').substring(0, 50), margin + colW + 16, y + 13);
+      }
+      y = startY + 38;
+    }
+  }
+
+  function rule() {
+    checkPage(12);
+    doc.setDrawColor(...SAGE);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, W - margin, y);
+    y += 12;
+  }
+
+  // ── Cover page ──
+  doc.setFillColor(...DEEP_BROWN);
+  doc.rect(0, 0, W, 120, 'F');
+  doc.setFillColor(...SAGE);
+  doc.rect(0, 120, W, 4, 'F');
+
+  doc.setFont('helvetica', 'bold').setFontSize(22).setTextColor(...LIMESTONE);
+  doc.text('PROJECT HANDOFF FORM', margin, 60);
+  doc.setFont('helvetica', 'normal').setFontSize(11).setTextColor(...SAGE);
+  doc.text('Peachtree Decks & Porches  ·  Sales → Production', margin, 82);
+  doc.setFontSize(9).setTextColor(180, 170, 160);
+  doc.text('CONFIDENTIAL — INTERNAL USE ONLY', margin, 100);
+
+  y = 144;
+
+  // Summary box
+  doc.setFillColor(...LIMESTONE);
+  doc.rect(margin, y, contentW, 90, 'F');
+  doc.setDrawColor(...BRONZE);
+  doc.setLineWidth(1);
+  doc.rect(margin, y, contentW, 90);
+
+  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...BRONZE);
+  doc.text('JOB', margin + 16, y + 20);
+  doc.text('CLIENT', margin + 16, y + 36);
+  doc.text('ADDRESS', margin + 16, y + 52);
+  doc.text('SALESPERSON', margin + 16, y + 68);
+
+  doc.setFont('helvetica', 'normal').setFontSize(11).setTextColor(...CHARCOAL);
+  doc.text('#' + (val('f_jobNumber') || '—') + '  ·  ' + (val('f_jobName') || ''), margin + 90, y + 20);
+  doc.text(val('f_clientName') || '—', margin + 90, y + 36);
+  doc.text(val('f_jobAddress') || '—', margin + 90, y + 52);
+  doc.text((val('f_sigName') || '—') + '  ·  Submitted: ' + (val('f_sigDate') || '—'), margin + 90, y + 68);
+
+  y += 110;
+
+  // ── 01 Project Identity ──
+  sectionHeader('01', 'Project Identity');
+  twoCol([
+    { label: 'Job Number', value: val('f_jobNumber') },
+    { label: 'Job Name', value: val('f_jobName') },
+    { label: 'Client Name', value: val('f_clientName') },
+    { label: 'Client Phone', value: val('f_clientPhone') },
+    { label: 'Client Email', value: val('f_clientEmail') },
+    { label: 'Mailing Address', value: val('f_clientAddress') },
+    { label: 'Job Site Address', value: val('f_jobAddress') },
+    { label: 'Assigned PM', value: val('f_pm') },
+    { label: 'Est. Start Date', value: val('f_startDate') },
+    { label: 'Completion Date', value: val('f_completionDate') },
+  ]);
+
+  // ── Contract Description ──
+  rule();
+  labelValue('Contract Description', val('f_contractDesc'));
+
+  // ── 02 Client Profile ──
+  sectionHeader('02', 'Client Profile & Promises Made');
+  twoCol([
+    { label: 'Preferred Contact Method', value: val('f_contactMethod') },
+    { label: 'Best Time to Reach', value: val('f_bestTime') },
+    { label: 'Primary Decision-Maker', value: val('f_decisionMaker') },
+  ]);
+  rule();
+  labelValue('Promise / Commitment 1', val('f_promise1'));
+  labelValue('Promise / Commitment 2', val('f_promise2'));
+  labelValue('Promise / Commitment 3', val('f_promise3'));
+  rule();
+  labelValue('Known Client Sensitivities', val('f_sensitivities'));
+  rule();
+  labelValue('Open Design Decisions', [val('f_open1'), val('f_open2'), val('f_open3')].filter(Boolean).join(' · ') || '—');
+
+  // ── 03 Scope ──
+  sectionHeader('03', 'Scope Summary');
+  var scopeChecks = [
+    document.querySelector('input[name="scope_deck"]').checked && 'Composite Deck',
+    document.querySelector('input[name="scope_porch"]').checked && 'Screened Porch',
+    document.querySelector('input[name="scope_pergola"]').checked && 'Pergola / Shade Structure',
+    document.querySelector('input[name="scope_teardown"]').checked && 'Teardown of existing structure required',
+    val('f_scopeOther'),
+  ].filter(Boolean);
+  labelValue('Structure Types', scopeChecks.join('  ·  ') || '—');
+  labelValue('Scope Summary', val('f_scopeSummary'));
+
+  // ── 04 Materials ──
+  sectionHeader('04', 'Material Selections');
+  twoCol([
+    { label: 'Decking Manufacturer', value: val('f_deckMfg') },
+    { label: 'Product Line', value: val('f_deckLine') },
+    { label: 'Color Name', value: val('f_deckColor') },
+    { label: 'SKU', value: val('f_deckSKU') },
+    { label: 'Board Width', value: val('f_deckWidth') },
+    { label: 'Edge Type', value: val('f_deckEdge') },
+  ]);
+  rule();
+  twoCol([
+    { label: 'Railing Manufacturer', value: val('f_railMfg') },
+    { label: 'Product Line', value: val('f_railLine') },
+    { label: 'Post Color', value: val('f_railPostColor') },
+    { label: 'Rail Color', value: val('f_railColor') },
+    { label: 'Baluster Style', value: val('f_baluster') },
+    { label: 'Post Cap Style', value: val('f_postCap') },
+  ]);
+  rule();
+  twoCol([
+    { label: 'Fastener System', value: val('f_fastener') },
+    { label: 'Fastener Color', value: val('f_fastenerColor') },
+  ]);
+  rule();
+  labelValue('Material Deviation 1', val('f_matDev1'));
+  labelValue('Material Deviation 2', val('f_matDev2'));
+
+  // ── 05 Site Conditions ──
+  sectionHeader('05', 'Site Conditions');
+  twoCol([
+    { label: 'Deck Height at House', value: val('f_heightHouse') },
+    { label: 'Max Height at Any Corner', value: val('f_heightMax') },
+  ]);
+  labelValue('Slope / Grade Description', val('f_slope'));
+  var gradeChecks = [
+    document.querySelector('input[name="grade_flat"]').checked && 'Relatively flat',
+    document.querySelector('input[name="grade_slope"]').checked && 'Significant slope',
+    document.querySelector('input[name="grade_multilevel"]').checked && 'Multi-level required',
+  ].filter(Boolean);
+  labelValue('Grade Conditions', gradeChecks.join(', ') || '—');
+  rule();
+  var attachChecks = [
+    document.querySelector('input[name="attach_rim"]').checked && 'Ledger to rim joist',
+    document.querySelector('input[name="attach_masonry"]').checked && 'Ledger to masonry / brick',
+    document.querySelector('input[name="attach_free"]').checked && 'Freestanding',
+    document.querySelector('input[name="attach_other"]').checked && 'Non-standard',
+  ].filter(Boolean);
+  labelValue('House Attachment', attachChecks.join(', ') || '—');
+  labelValue('Flashing / Attachment Notes', val('f_flashing'));
+  rule();
+  labelValue('Equipment Access Route', val('f_access'));
+  labelValue('Underground Utilities / Constraints', val('f_utilities'));
+  labelValue('Items to Protect', val('f_protect'));
+  var photosOk = document.getElementById('photosConfirmed').checked;
+  labelValue('Site Photos', photosOk ? '✓ Confirmed uploaded and labeled in JobTread' : '⚠ NOT YET CONFIRMED');
+
+  // ── 06 Structural ──
+  sectionHeader('06', 'Structural & Engineering Notes');
+  twoCol([
+    { label: 'Joist Span (ft)', value: val('f_joistSpan') },
+    { label: 'Joist Spacing (in OC)', value: val('f_joistSpacing') },
+    { label: 'Beam Span Between Posts (ft)', value: val('f_beamSpan') },
+    { label: 'Post Spacing (ft)', value: val('f_postSpacing') },
+    { label: 'Footing Diameter (in)', value: val('f_footingDia') },
+    { label: 'Footing Depth (in)', value: val('f_footingDepth') },
+  ]);
+  var loadChecks = [
+    document.querySelector('input[name="load_standard"]').checked && 'Standard residential (40 psf)',
+    document.querySelector('input[name="load_hottub"]').checked && 'Hot tub / spa on structure',
+    document.querySelector('input[name="load_kitchen"]').checked && 'Outdoor kitchen or heavy feature',
+    document.querySelector('input[name="load_engineer"]').checked && 'Engineering stamp required',
+  ].filter(Boolean);
+  labelValue('Load Conditions', loadChecks.join('  ·  ') || '—');
+  rule();
+  labelValue('Framing Deviation 1', val('f_frameDev1'));
+  labelValue('Framing Deviation 2', val('f_frameDev2'));
+
+  // ── 07 Permit ──
+  sectionHeader('07', 'Permit & HOA');
+  twoCol([
+    { label: 'Permit Status', value: val('f_permitStatus') },
+    { label: 'Jurisdiction / County', value: val('f_jurisdiction') },
+    { label: 'HOA Required', value: val('f_hoaReq') },
+    { label: 'HOA Status', value: val('f_hoaStatus') },
+  ]);
+  labelValue('Permit Complications / Notes', val('f_permitNotes'));
+
+  // ── 08 Trades ──
+  sectionHeader('08', 'Subcontractor & Trade Flags');
+  var tradeChecks = [
+    document.querySelector('input[name="trade_elec"]').checked && 'Electrical',
+    document.querySelector('input[name="trade_concrete"]').checked && 'Concrete / flatwork',
+    document.querySelector('input[name="trade_plumbing"]').checked && 'Plumbing',
+    document.querySelector('input[name="trade_screen"]').checked && 'Motorized screen system',
+    document.querySelector('input[name="trade_louver"]').checked && 'Louvered roof system',
+  ].filter(Boolean);
+  labelValue('Trades Flagged', tradeChecks.join('  ·  ') || 'None');
+  labelValue('Trade Coordination Notes', val('f_tradeNotes'));
+
+  // ── 09 Certification ──
+  sectionHeader('09', 'Handoff Certification');
+  twoCol([
+    { label: 'Submitted By', value: val('f_sigName') },
+    { label: 'Date of Submission', value: val('f_sigDate') },
+  ]);
+  labelValue('PM Notes / Open Questions', val('f_pmNotes'));
+
+  // Footer on all pages
+  var totalPages = doc.getNumberOfPages();
+  for (var i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(...DEEP_BROWN);
+    doc.rect(0, 780, W, 28, 'F');
+    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...LIMESTONE);
+    doc.text('PEACHTREE DECKS & PORCHES  ·  Project Handoff Form  ·  CONFIDENTIAL', margin, 798);
+    doc.text('Page ' + i + ' of ' + totalPages, W - margin, 798, { align: 'right' });
+  }
+
+  return doc;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUBMIT — Generate PDF and download
+// ══════════════════════════════════════════════════════════════════════════════
+async function submitForm() {
+  if (!currentJobId) {
+    showModal('⚠️', 'No Job Loaded', 'Please enter a JobTread job number and click "Load Job" before submitting.');
+    return;
+  }
+  if (!val('f_sigName')) {
+    showModal('⚠️', 'Signature Required', 'Please enter your name in Section 09 before submitting.');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Generating PDF...';
+
+  try {
+    const pdfDoc = generatePDF();
+    const jobNum = val('f_jobNumber');
+    const clientName = val('f_clientName').split(' ').pop() || 'Client';
+    const fileName = 'HANDOFF_' + jobNum + '_' + clientName + '.pdf';
+
+    pdfDoc.save(fileName);
+
+    btn.disabled = false;
+    btn.textContent = 'Generate & Download PDF';
+    showModal('✅', 'PDF Generated', 'The handoff PDF "' + fileName + '" has been downloaded to your device. Please upload it to JobTread job #' + jobNum + ' under the job files.');
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false;
+    btn.textContent = 'Generate & Download PDF';
+    showModal('❌', 'Error', 'Something went wrong generating the PDF. Please try again.');
+  }
+}
+
+// ── Modal ──
+function showModal(icon, title, body) {
+  document.getElementById('modalIcon').textContent = icon;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  document.getElementById('modal').classList.add('visible');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('visible');
+}
+</script>
+</body>
+</html>
