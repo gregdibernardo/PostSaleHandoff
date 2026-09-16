@@ -1156,22 +1156,45 @@ async function openDraftsList() {
       return;
     }
     listEl.innerHTML = '';
-    drafts.forEach(d => {
-      const row = document.createElement('div');
-      row.className = 'draft-row';
-      const when = d.updatedAt ? new Date(d.updatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
-      row.innerHTML =
-        '<div class="draft-row-main" onclick="loadDraft(\'' + d.id + '\')">' +
-          '<div class="draft-row-job">' + (escHtml(d.jobNumber) || 'No job #') + ' — ' + (escHtml(d.clientName) || 'Unnamed client') + '</div>' +
-          '<div class="draft-row-meta">Last saved ' + when + '</div>' +
-        '</div>' +
-        '<button type="button" class="draft-row-delete" onclick="deleteDraft(\'' + d.id + '\', event)">Delete</button>';
-      listEl.appendChild(row);
-    });
+    drafts.forEach(d => listEl.appendChild(buildDraftRow(d)));
   } catch (err) {
     console.error(err);
     listEl.innerHTML = '<div class="drafts-empty">Could not load drafts — check your connection.</div>';
   }
+}
+
+function buildDraftRow(d) {
+  const row = document.createElement('div');
+  row.className = 'draft-row';
+
+  const main = document.createElement('div');
+  main.className = 'draft-row-main';
+  main.addEventListener('click', () => loadDraft(d.id));
+
+  const jobLine = document.createElement('div');
+  jobLine.className = 'draft-row-job';
+  jobLine.textContent = (d.jobNumber || 'No job #') + ' — ' + (d.clientName || 'Unnamed client');
+
+  const when = d.updatedAt ? new Date(d.updatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
+  const metaLine = document.createElement('div');
+  metaLine.className = 'draft-row-meta';
+  metaLine.textContent = 'Last saved ' + when;
+
+  main.appendChild(jobLine);
+  main.appendChild(metaLine);
+
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button';
+  delBtn.className = 'draft-row-delete';
+  delBtn.textContent = 'Delete';
+  delBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteDraft(d.id, row);
+  });
+
+  row.appendChild(main);
+  row.appendChild(delBtn);
+  return row;
 }
 
 function closeDraftsList() {
@@ -1197,16 +1220,24 @@ async function loadDraft(id) {
   }
 }
 
-async function deleteDraft(id, event) {
-  event.stopPropagation();
+async function deleteDraft(id, rowEl) {
   if (!confirm('Delete this in-progress handoff? This cannot be undone.')) return;
   try {
-    await fetch(WORKER_BASE_URL + '/draft/' + id, { method: 'DELETE' });
+    const res = await fetch(WORKER_BASE_URL + '/draft/' + id, { method: 'DELETE' });
+    if (!res.ok) {
+      const text = await res.text();
+      alert('Could not delete that draft — the server said: ' + text.slice(0, 200));
+      return;
+    }
     if (id === currentDraftId) {
       currentDraftId = null;
       window.history.replaceState({}, '', window.location.pathname);
     }
-    openDraftsList();
+    if (rowEl && rowEl.remove) rowEl.remove();
+    const listEl = document.getElementById('draftsList');
+    if (listEl && listEl.children.length === 0) {
+      listEl.innerHTML = '<div class="drafts-empty">No in-progress handoffs saved yet.</div>';
+    }
   } catch (err) {
     console.error(err);
     alert('Could not delete that draft — check your connection.');
