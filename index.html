@@ -438,6 +438,7 @@
   <span class="topbar-title">Project Handoff Form</span>
   <div class="topbar-actions">
     <span class="save-status" id="saveStatus"></span>
+    <button type="button" class="btn-topbar" onclick="newHandoff()">New Handoff</button>
     <button type="button" class="btn-topbar" onclick="openDraftsList()">My Drafts</button>
     <button type="button" class="btn-topbar" onclick="saveDraft()">Save Draft</button>
   </div>
@@ -967,7 +968,7 @@ function escHtml(str) {
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIG — update after the Worker is deployed
 // ══════════════════════════════════════════════════════════════════════════════
-const WORKER_BASE_URL = 'https://postsalehandoff-api.greg-35d.workers.dev';
+const WORKER_BASE_URL = 'https://postsalehandoff.YOUR-SUBDOMAIN.workers.dev';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // JOBTREAD LOOKUP
@@ -1050,6 +1051,27 @@ function applyFormData(record) {
     if (el) el.checked = checked;
   });
   updateProgress();
+}
+
+function newHandoff() {
+  if (!confirm('Start a new handoff? Anything not saved on this one will be lost.')) return;
+
+  document.getElementById('handoffForm').reset();
+  document.querySelectorAll('#handoffForm .prefilled').forEach(el => el.classList.remove('prefilled'));
+
+  // form.reset() clears f_sigDate back to blank since its "today" value was
+  // set by script, not by the HTML itself — put today's date back.
+  document.getElementById('f_sigDate').value = new Date().toISOString().split('T')[0];
+
+  currentDraftId = null;
+  window.history.replaceState({}, '', window.location.pathname);
+
+  document.getElementById('lookupStatus').textContent = '';
+  document.getElementById('lookupStatus').className = 'lookup-status';
+  document.getElementById('saveStatus').textContent = '';
+
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function saveDraft() {
