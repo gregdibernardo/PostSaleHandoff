@@ -607,6 +607,13 @@
     <div class="section-body">
       <div class="section-note">Write what the crew and PM need to understand on day one — not the contract legal text.</div>
 
+      <div class="sub-section-title">Permitting</div>
+      <div class="check-group">
+        <label class="check-item"><input type="checkbox" name="permitting_permitted"> Permitted</label>
+        <label class="check-item"><input type="checkbox" name="permitting_nonpermitted"> Non-Permitted</label>
+      </div>
+
+      <div class="sage-rule"></div>
       <div class="sub-section-title">Primary Structure Type(s)</div>
       <div class="check-group">
         <label class="check-item"><input type="checkbox" name="scope_teardown"> Complete tear down of existing</label>
@@ -1464,6 +1471,12 @@ function generatePDF() {
 
   // ── 03 Scope ──
   sectionHeader('03', 'Scope Summary');
+  var permittingChecks = [
+    document.querySelector('input[name="permitting_permitted"]').checked && 'Permitted',
+    document.querySelector('input[name="permitting_nonpermitted"]').checked && 'Non-Permitted',
+  ].filter(Boolean);
+  checkedList('Permitting', permittingChecks);
+  rule();
   var scopeChecks = [
     document.querySelector('input[name="scope_teardown"]').checked && 'Complete tear down of existing',
     document.querySelector('input[name="scope_partial"]').checked && 'Partial demolition',
