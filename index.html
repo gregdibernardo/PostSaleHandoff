@@ -702,6 +702,37 @@
     <div class="section-body">
       <div class="section-note">These details drive the drafter's permit drawings. Complete every field for every job.</div>
 
+      <div class="sub-section-title">Site Plan / Survey</div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label">Is the site plan or property survey being supplied by the client?</label>
+          <select id="f_sitePlanSupplied">
+            <option value="">Select...</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Has a site plan or property survey been included in job budget?</label>
+          <select id="f_sitePlanInBudget">
+            <option value="">Select...</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Where is the client supplied site plan or survey currently located?</label>
+          <select id="f_sitePlanLocation">
+            <option value="">Select...</option>
+            <option>JobTread</option>
+            <option>My Email</option>
+            <option>Job Folder on SharePoint</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
       <div class="sub-section-title">Grade &amp; Elevation</div>
       <div class="field-grid">
         <div class="field-group">
@@ -759,6 +790,14 @@
             <option>12 inches on center</option>
             <option>16 inches on center</option>
           </select>
+        </div>
+      </div>
+
+      <div class="sage-rule"></div>
+      <div class="sub-section-title">Engineered Beams</div>
+      <div class="field-grid one-col">
+        <div class="field-group">
+          <textarea id="f_engineeredBeams" placeholder="Describe location and type of engineered beams needed for this project. Be specific"></textarea>
         </div>
       </div>
 
@@ -1423,6 +1462,12 @@ function generatePDF() {
   // ── 06 Structural ──
   sectionHeader('06', 'Structural & Engineering Notes');
   twoCol([
+    { label: 'Site Plan/Survey Supplied by Client', value: val('f_sitePlanSupplied') },
+    { label: 'Site Plan/Survey Included in Budget', value: val('f_sitePlanInBudget') },
+    { label: 'Site Plan/Survey Location', value: val('f_sitePlanLocation') },
+  ]);
+  rule();
+  twoCol([
     { label: 'Deck Height at House', value: val('f_heightHouse') },
     { label: 'Max Height at Any Corner', value: val('f_heightMax') },
   ]);
@@ -1455,6 +1500,8 @@ function generatePDF() {
   twoCol([
     { label: 'Joist Spacing', value: val('f_joistSpacing') },
   ]);
+  rule();
+  labelValue('Engineered Beams', val('f_engineeredBeams'));
   rule();
   labelValue('Framing Deviation 1', val('f_frameDev1'));
   labelValue('Framing Deviation 2', val('f_frameDev2'));
